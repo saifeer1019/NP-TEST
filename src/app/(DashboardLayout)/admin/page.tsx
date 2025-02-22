@@ -151,7 +151,15 @@ const AdminPage = () => {
                             onChange={(e) => handleFilterChange('endDate', e.target.value)}
                             InputLabelProps={{ shrink: true }}
                         />
-                        
+                                <Button 
+                        variant="contained"
+                        className="self-end" 
+                        onClick={() => router.push('/admin/article/new')}
+                        sx={{ mb: 2 }}
+                    >
+                        Create New Article
+                    </Button>
+
                     </Stack>
 
                     <TableContainer component={Paper}>

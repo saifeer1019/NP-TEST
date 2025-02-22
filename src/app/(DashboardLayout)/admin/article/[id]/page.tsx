@@ -1,6 +1,5 @@
-// app/(DashboardLayout)/admin/article/[id]/page.tsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -19,13 +18,18 @@ import {
 } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import dynamic from 'next/dynamic';
 import axios from 'axios';
 import Image from 'next/image';
 import { Upload as UploadIcon } from '@mui/icons-material';
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Bold from '@tiptap/extension-bold';
+import Italic from '@tiptap/extension-italic';
+import Strike from '@tiptap/extension-strike';
+import Heading from '@tiptap/extension-heading';
+import BulletList from '@tiptap/extension-bullet-list';
+import OrderedList from '@tiptap/extension-ordered-list';
+import Link from '@tiptap/extension-link';
 
 interface ArticleFormData {
     title: string;
@@ -44,6 +48,139 @@ const initialFormData: ArticleFormData = {
     featuredImage: '',
     isFeatured: false
 };
+
+const Toolbar = ({ editor }: { editor: any }) => {
+    if (!editor) return null;
+
+    return (
+        <Box
+            sx={{
+                borderBottom: '1px solid black', // Black border at the bottom
+                backgroundColor: '#f5f5f5', // Light gray background
+                py: 1, // Padding on the y-axis
+                mb: 2, // Margin at the bottom
+            }}
+        >
+            <Stack direction="row" spacing={1} sx={{ px: 2 }}>
+                <Button
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    disabled={!editor.can().chain().focus().toggleBold().run()}
+                    variant={editor.isActive('bold') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }} // Prevent uppercase text
+                >
+                    Bold
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    disabled={!editor.can().chain().focus().toggleItalic().run()}
+                    variant={editor.isActive('italic') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Italic
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleStrike().run()}
+                    disabled={!editor.can().chain().focus().toggleStrike().run()}
+                    variant={editor.isActive('strike') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Strike
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                    variant={editor.isActive('heading', { level: 1 }) ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    H1
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                    variant={editor.isActive('heading', { level: 2 }) ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    H2
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleBulletList().run()}
+                    variant={editor.isActive('bulletList') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Bullet List
+                </Button>
+                <Button
+                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                    variant={editor.isActive('orderedList') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Ordered List
+                </Button>
+                <Button
+                    onClick={() => {
+                        const url = window.prompt('Enter the URL');
+                        if (url) {
+                            editor.chain().focus().toggleLink({ href: url }).run();
+                        }
+                    }}
+                    variant={editor.isActive('link') ? 'contained' : 'outlined'}
+                    sx={{ textTransform: 'none' }}
+                >
+                    Link
+                </Button>
+            </Stack>
+        </Box>
+    );
+};
+
+const TiptapEditor = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Bold,
+            Italic,
+            Strike,
+            Heading.configure({
+                levels: [1, 2],
+            }),
+            BulletList,
+            OrderedList,
+            Link.configure({
+                openOnClick: false,
+            }),
+        ],
+        content: value,
+        onUpdate: ({ editor }) => {
+            onChange(editor.getHTML());
+        },
+    });
+
+    useEffect(() => {
+        if (editor && value !== editor.getHTML()) {
+            editor.commands.setContent(value);
+        }
+    }, [value]);
+
+    return (
+        <Box
+            sx={{
+                border: '1px solid black', // Black border
+                borderRadius: '4px', // Rounded corners
+                minHeight: '300px', // Minimum height
+                overflow: 'hidden', // Ensure content doesn't overflow
+            }}
+        >
+            <Toolbar editor={editor} />
+            <Box
+                sx={{
+                    padding: '16px', // Add padding inside the editor
+                }}
+            >
+                <EditorContent editor={editor} />
+            </Box>
+        </Box>
+    );
+};
+
+const MemoizedTiptapEditor = memo(TiptapEditor);
 
 export default function ArticleForm({ params }: { params: { id: string } }) {
     const router = useRouter();
@@ -96,50 +233,6 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
             setError('Failed to upload image');
         } finally {
             setUploadingImage(false);
-        }
-    };
-
-    const quillModules = {
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['link', 'image', 'video'],
-                ['clean']
-            ],
-            handlers: {
-                image: function() {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.click();
-
-                    input.onchange = async () => {
-                        const file = input.files?.[0];
-                        if (!file) return;
-
-                        try {
-                            setLoading(true);
-                            const formData = new FormData();
-                            formData.append('file', file);
-
-                            const response = await axios.post('/api/upload', formData, {
-                                headers: {
-                                    'Content-Type': 'multipart/form-data',
-                                },
-                            });
-
-                            const range = (ReactQuill as any).getEditor().getSelection(true);
-                            (ReactQuill as any).getEditor().insertEmbed(range.index, 'image', response.data.url);
-                        } catch (error) {
-                            setError('Failed to upload image');
-                        } finally {
-                            setLoading(false);
-                        }
-                    };
-                }
-            }
         }
     };
 
@@ -237,7 +330,7 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                                 onChange={handleFileUpload}
                             />
                             <TextField
-                                label="Featured Image URL"
+                                label="Upload Image"
                                 value={formData.featuredImage}
                                 onChange={(e) => handleChange('featuredImage', e.target.value)}
                                 fullWidth
@@ -266,12 +359,9 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                         </Box>
 
                         <Box sx={{ mb: 2 }}>
-                            <ReactQuill
-                                theme="snow"
+                            <MemoizedTiptapEditor
                                 value={formData.content}
                                 onChange={(value) => handleChange('content', value)}
-                                modules={quillModules}
-                                style={{ height: '300px', marginBottom: '50px' }}
                             />
                         </Box>
 
@@ -304,6 +394,6 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                     </Stack>
                 </Box>
             </DashboardCard>
-        </PageContainer>
+            </PageContainer>
     );
 }
