@@ -107,13 +107,7 @@ const AdminPage = () => {
         <PageContainer title="Articles Management" description="Manage your articles">
             <DashboardCard title="Articles List">
                 <Box sx={{ mb: 3 }}>
-                    <Button 
-                        variant="contained" 
-                        onClick={() => router.push('/admin/article/new')}
-                        sx={{ mb: 2 }}
-                    >
-                        Create New Article
-                    </Button>
+               
 
                     <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} alignItems="center" mb={2}>
                         <FormControl sx={{ minWidth: 120 }}>
@@ -157,6 +151,7 @@ const AdminPage = () => {
                             onChange={(e) => handleFilterChange('endDate', e.target.value)}
                             InputLabelProps={{ shrink: true }}
                         />
+                        
                     </Stack>
 
                     <TableContainer component={Paper}>
