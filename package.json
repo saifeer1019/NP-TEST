@@ -26,6 +26,7 @@
     "bcryptjs": "^3.0.2",
     "eslint": "8.46.0",
     "eslint-config-next": "13.4.12",
+    "jose": "^5.10.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "4.17.21",
     "mongoose": "^8.10.1",
