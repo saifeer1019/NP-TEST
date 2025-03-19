@@ -2,6 +2,7 @@ import { useMediaQuery, Box, Drawer } from "@mui/material";
 import SidebarItems from "./SidebarItems";
 import { Upgrade } from "./Updrade";
 import { Sidebar, Logo } from 'react-mui-sidebar';
+import Image from "next/image";
 
 interface ItemType {
   isMobileSidebarOpen: boolean;
@@ -72,13 +73,16 @@ const MSidebar = ({
               {/* ------------------------------------------- */}
               {/* Logo */}
               {/* ------------------------------------------- */}
-              <Logo img="/images/logos/dark-logo.svg" />
+              <Image src="/images/logos/z.jpg"
+              width={200}
+              height={50}
+              />
               <Box>
                 {/* ------------------------------------------- */}
                 {/* Sidebar Items */}
                 {/* ------------------------------------------- */}
                 <SidebarItems />
-                <Upgrade />
+            
               </Box>
             </Sidebar >
           </Box>
@@ -122,7 +126,7 @@ const MSidebar = ({
           {/* Sidebar Items */}
           {/* ------------------------------------------- */}
           <SidebarItems />
-          <Upgrade />
+   
         </Sidebar>
       </Box>
       {/* ------------------------------------------- */}

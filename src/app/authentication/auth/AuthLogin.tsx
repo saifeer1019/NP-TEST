@@ -34,7 +34,7 @@ const AuthLogin = ({ title, subtitle, subtext }: LoginType) => {
       if (response.status === 200) {
         // Save token to localStorage or cookies
         Cookies.set('token', response.data.token, { expires: 1, secure: true, sameSite: 'Strict' }); // Store token in cookies
-        window.location.href = '/admin'; // Redirect to dashboard or home page
+        window.location.href = '/'; // Redirect to dashboard or home page
       } else {
         setError(response.data.error || 'Login failed');
       }

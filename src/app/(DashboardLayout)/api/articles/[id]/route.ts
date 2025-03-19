@@ -56,6 +56,34 @@ export async function PUT(
     }
 }
 
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    try {
+        console.log('delete started')
+        await connectionToDatabase();
+        
+
+
+
+
+        console.log('id', params.id)
+        
+        await Article.findByIdAndDelete(params.id)      
+        
+
+        
+        
+        return NextResponse.json('deleted');
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Internal Server Error' },
+            { status: 500 }
+        );
+    }
+}
+
 
 
 

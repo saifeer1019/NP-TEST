@@ -90,6 +90,12 @@ const AdminPage = () => {
         }
     };
 
+    const handleDelete = async (id: string, router: any) => {
+        console.log("handling delete");
+        await axios.delete(`/api/articles/${id}`);
+        window.location.reload() };
+    
+
     useEffect(() => {
         fetchArticles();
     }, [page, filters]);
@@ -171,7 +177,8 @@ const AdminPage = () => {
                                     <TableCell>Published</TableCell>
                                     <TableCell>Featured</TableCell>
                                     <TableCell>Views</TableCell>
-                                    <TableCell>Actions</TableCell>
+                                    <TableCell>Edit</TableCell>
+                                    <TableCell>Delete</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -196,13 +203,23 @@ const AdminPage = () => {
                                             />
                                         </TableCell>
                                         <TableCell>{article.views}</TableCell>
-                                        <TableCell>
+                                        <TableCell >
                                             <Button
                                                 variant="outlined"
                                                 size="small"
                                                 onClick={() => router.push(`/admin/article/${article._id}`)}
                                             >
                                                 Edit
+                                            </Button>
+                                            </TableCell>
+                                            <TableCell >
+                                            <Button
+                                            color='error'
+                                                variant="outlined"
+                                                size="small"
+                                           onClick={() => handleDelete(article._id)}
+                                            >
+                                                Delete
                                             </Button>
                                         </TableCell>
                                     </TableRow>
