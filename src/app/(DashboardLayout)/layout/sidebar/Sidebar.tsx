@@ -76,6 +76,7 @@ const MSidebar = ({
               <Image src="/images/logos/z.jpg"
               width={200}
               height={50}
+              alt="logo"
               />
               <Box>
                 {/* ------------------------------------------- */}

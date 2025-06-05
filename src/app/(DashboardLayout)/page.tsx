@@ -90,7 +90,7 @@ const AdminPage = () => {
         }
     };
 
-    const handleDelete = async (id: string, router: any) => {
+    const handleDelete = async (id: string) => {
         console.log("handling delete");
         await axios.delete(`/api/articles/${id}`);
         window.location.reload() };
