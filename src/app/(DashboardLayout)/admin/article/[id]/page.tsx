@@ -14,7 +14,8 @@ import {
     Stack,
     Alert,
     CircularProgress,
-    IconButton
+    IconButton,
+    Typography
 } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
@@ -182,6 +183,17 @@ const TiptapEditor = ({ value, onChange }: { value: string; onChange: (value: st
 
 const MemoizedTiptapEditor = memo(TiptapEditor);
 
+// Helper function to check if URL is a video
+const isVideoFile = (url: string): boolean => {
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
+    const lowerUrl = url.toLowerCase();
+    return videoExtensions.some(ext => lowerUrl.includes(ext)) || 
+           lowerUrl.includes('video') || 
+           lowerUrl.includes('.mp4') ||
+           lowerUrl.includes('youtube') ||
+           lowerUrl.includes('vimeo');
+};
+
 export default function ArticleForm({ params }: { params: { id: string } }) {
     const router = useRouter();
     const isEditing = params.id !== 'new';
@@ -217,6 +229,15 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
         const file = event.target.files?.[0];
         if (!file) return;
 
+        // Check file type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        
+        if (!isImage && !isVideo) {
+            setError('Please select an image or video file');
+            return;
+        }
+
         try {
             setUploadingImage(true);
             const formData = new FormData();
@@ -230,7 +251,7 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
 
             handleChange('featuredImage', response.data.url);
         } catch (error) {
-            setError('Failed to upload image');
+            setError('Failed to upload file');
         } finally {
             setUploadingImage(false);
         }
@@ -324,21 +345,23 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                         <Box>
                             <input
                                 type="file"
-                                accept="image/*"
-                                id="featured-image-upload"
+                                accept="image/*,video/*"
+                                id="featured-media-upload"
                                 style={{ display: 'none' }}
                                 onChange={handleFileUpload}
                             />
                             <TextField
-                                label="Upload Image"
+                                label="Featured Image/Video URL"
                                 value={formData.featuredImage}
                                 onChange={(e) => handleChange('featuredImage', e.target.value)}
                                 fullWidth
+                                helperText="Upload an image or video file, or enter a URL"
                                 InputProps={{
                                     endAdornment: (
                                         <IconButton
-                                            onClick={() => document.getElementById('featured-image-upload')?.click()}
+                                            onClick={() => document.getElementById('featured-media-upload')?.click()}
                                             disabled={uploadingImage}
+                                            title="Upload image or video"
                                         >
                                             {uploadingImage ? <CircularProgress size={24} /> : <UploadIcon />}
                                         </IconButton>
@@ -347,13 +370,43 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                             />
                             {formData.featuredImage && (
                                 <Box mt={2}>
-                                    <Image
-                                        src={formData.featuredImage}
-                                        alt="Featured image preview"
-                                        width={200}
-                                        height={120}
-                                        style={{ objectFit: 'cover' }}
-                                    />
+                                    {isVideoFile(formData.featuredImage) ? (
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                Featured Video Preview:
+                                            </Typography>
+                                            <video
+                                                src={formData.featuredImage}
+                                                width="300"
+                                                height="180"
+                                                controls
+                                                style={{ 
+                                                    objectFit: 'cover',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid #ddd'
+                                                }}
+                                            >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </Box>
+                                    ) : (
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                Featured Image Preview:
+                                            </Typography>
+                                            <Image
+                                                src={formData.featuredImage}
+                                                alt="Featured image preview"
+                                                width={200}
+                                                height={120}
+                                                style={{ 
+                                                    objectFit: 'cover',
+                                                    borderRadius: '4px',
+                                                    border: '1px solid #ddd'
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
                                 </Box>
                             )}
                         </Box>
