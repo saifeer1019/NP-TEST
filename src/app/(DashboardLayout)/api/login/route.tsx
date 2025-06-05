@@ -20,10 +20,10 @@ export async function POST(request: Request) {
     if (!isMatch) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-    // const isAdmin = await user.role == 'admin';
-    // if (!isAdmin) {
-    //   return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    // }
+    const isAdmin = await user.role == 'admin';
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, {
       expiresIn: '1h',
