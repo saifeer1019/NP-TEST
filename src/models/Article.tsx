@@ -33,6 +33,10 @@ const articleSchema = new mongoose.Schema({
    
 
     featuredImage: String,
+    thumbnailImage: {
+        type: String,
+        required: false
+    },
     views: {
         type: Number,
         default: 0

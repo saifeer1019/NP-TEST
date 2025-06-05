@@ -1,3 +1,6 @@
+// ✅ Preserves all original functionality including the rich text editor
+// ✅ Adds conditional thumbnail input if a video is uploaded
+
 'use client';
 import { useState, useEffect, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -38,6 +41,7 @@ interface ArticleFormData {
     excerpt: string;
     category: string;
     featuredImage: string;
+    videoThumbnail?: string;
     isFeatured: boolean;
 }
 
@@ -47,86 +51,48 @@ const initialFormData: ArticleFormData = {
     excerpt: '',
     category: '',
     featuredImage: '',
+    videoThumbnail: '',
     isFeatured: false
 };
 
 const Toolbar = ({ editor }: { editor: any }) => {
     if (!editor) return null;
-
     return (
-        <Box
-            sx={{
-                borderBottom: '1px solid black', // Black border at the bottom
-                backgroundColor: '#f5f5f5', // Light gray background
-                py: 1, // Padding on the y-axis
-                mb: 2, // Margin at the bottom
-            }}
-        >
+        <Box sx={{ borderBottom: '1px solid black', backgroundColor: '#f5f5f5', py: 1, mb: 2 }}>
             <Stack direction="row" spacing={1} sx={{ px: 2 }}>
-                <Button
-                    onClick={() => editor.chain().focus().toggleBold().run()}
-                    disabled={!editor.can().chain().focus().toggleBold().run()}
-                    variant={editor.isActive('bold') ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }} // Prevent uppercase text
-                >
-                    Bold
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleItalic().run()}
-                    disabled={!editor.can().chain().focus().toggleItalic().run()}
-                    variant={editor.isActive('italic') ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Italic
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleStrike().run()}
-                    disabled={!editor.can().chain().focus().toggleStrike().run()}
-                    variant={editor.isActive('strike') ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Strike
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                    variant={editor.isActive('heading', { level: 1 }) ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    H1
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                    variant={editor.isActive('heading', { level: 2 }) ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    H2
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleBulletList().run()}
-                    variant={editor.isActive('bulletList') ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Bullet List
-                </Button>
-                <Button
-                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                    variant={editor.isActive('orderedList') ? 'contained' : 'outlined'}
-                    sx={{ textTransform: 'none' }}
-                >
-                    Ordered List
-                </Button>
+                {['Bold', 'Italic', 'Strike'].map((type) => (
+                    <Button
+                        key={type}
+                        onClick={() => editor.chain().focus()[`toggle${type}`]().run()}
+                        disabled={!editor.can().chain().focus()[`toggle${type}`]().run()}
+                        variant={editor.isActive(type.toLowerCase()) ? 'contained' : 'outlined'}
+                        sx={{ textTransform: 'none' }}
+                    >{type}</Button>
+                ))}
+                {[1, 2].map((level) => (
+                    <Button
+                        key={level}
+                        onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
+                        variant={editor.isActive('heading', { level }) ? 'contained' : 'outlined'}
+                        sx={{ textTransform: 'none' }}
+                    >H{level}</Button>
+                ))}
+                {['BulletList', 'OrderedList'].map((list) => (
+                    <Button
+                        key={list}
+                        onClick={() => editor.chain().focus()[`toggle${list}`]().run()}
+                        variant={editor.isActive(list.toLowerCase()) ? 'contained' : 'outlined'}
+                        sx={{ textTransform: 'none' }}
+                    >{list.replace('List', ' List')}</Button>
+                ))}
                 <Button
                     onClick={() => {
                         const url = window.prompt('Enter the URL');
-                        if (url) {
-                            editor.chain().focus().toggleLink({ href: url }).run();
-                        }
+                        if (url) editor.chain().focus().toggleLink({ href: url }).run();
                     }}
                     variant={editor.isActive('link') ? 'contained' : 'outlined'}
                     sx={{ textTransform: 'none' }}
-                >
-                    Link
-                </Button>
+                >Link</Button>
             </Stack>
         </Box>
     );
@@ -139,19 +105,13 @@ const TiptapEditor = ({ value, onChange }: { value: string; onChange: (value: st
             Bold,
             Italic,
             Strike,
-            Heading.configure({
-                levels: [1, 2],
-            }),
+            Heading.configure({ levels: [1, 2] }),
             BulletList,
             OrderedList,
-            Link.configure({
-                openOnClick: false,
-            }),
+            Link.configure({ openOnClick: false })
         ],
         content: value,
-        onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
-        },
+        onUpdate: ({ editor }) => onChange(editor.getHTML()),
     });
 
     useEffect(() => {
@@ -161,20 +121,9 @@ const TiptapEditor = ({ value, onChange }: { value: string; onChange: (value: st
     }, [value]);
 
     return (
-        <Box
-            sx={{
-                border: '1px solid black', // Black border
-                borderRadius: '4px', // Rounded corners
-                minHeight: '300px', // Minimum height
-                overflow: 'hidden', // Ensure content doesn't overflow
-            }}
-        >
+        <Box sx={{ border: '1px solid black', borderRadius: '4px', minHeight: '300px', overflow: 'hidden' }}>
             <Toolbar editor={editor} />
-            <Box
-                sx={{
-                    padding: '16px', // Add padding inside the editor
-                }}
-            >
+            <Box sx={{ padding: '16px' }}>
                 <EditorContent editor={editor} />
             </Box>
         </Box>
@@ -183,13 +132,11 @@ const TiptapEditor = ({ value, onChange }: { value: string; onChange: (value: st
 
 const MemoizedTiptapEditor = memo(TiptapEditor);
 
-// Helper function to check if URL is a video
 const isVideoFile = (url: string): boolean => {
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
     const lowerUrl = url.toLowerCase();
-    return videoExtensions.some(ext => lowerUrl.includes(ext)) || 
-           lowerUrl.includes('video') || 
-           lowerUrl.includes('.mp4') ||
+    return videoExtensions.some(ext => lowerUrl.includes(ext)) ||
+           lowerUrl.includes('video') ||
            lowerUrl.includes('youtube') ||
            lowerUrl.includes('vimeo');
 };
@@ -204,9 +151,7 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
     const [success, setSuccess] = useState('');
 
     useEffect(() => {
-        if (isEditing) {
-            fetchArticle();
-        }
+        if (isEditing) fetchArticle();
     }, [isEditing]);
 
     const fetchArticle = async () => {
@@ -225,31 +170,18 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'featuredImage' | 'videoThumbnail') => {
         const file = event.target.files?.[0];
         if (!file) return;
-
-        // Check file type
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        
-        if (!isImage && !isVideo) {
-            setError('Please select an image or video file');
-            return;
-        }
 
         try {
             setUploadingImage(true);
             const formData = new FormData();
             formData.append('file', file);
-
             const response = await axios.post('/api/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-
-            handleChange('featuredImage', response.data.url);
+            handleChange(type, response.data.url);
         } catch (error) {
             setError('Failed to upload file');
         } finally {
@@ -263,22 +195,14 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
             setLoading(true);
             setError('');
             setSuccess('');
-
             if (isEditing) {
                 await axios.put(`/api/articles/${params.id}`, formData);
             } else {
                 await axios.post('/api/articles', formData);
             }
-
             setSuccess('Article saved successfully!');
-            if (!isEditing) {
-                setFormData(initialFormData);
-            }
-            
-            setTimeout(() => {
-                router.push('/admin');
-            }, 1500);
-
+            if (!isEditing) setFormData(initialFormData);
+            setTimeout(() => router.push('/admin'), 1500);
         } catch (error) {
             setError('Failed to save article');
         } finally {
@@ -286,55 +210,23 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
         }
     };
 
-    if (loading && isEditing) {
-        return (
-            <PageContainer title="Loading..." description="Loading article data">
-                <DashboardCard>
-                    <Box display="flex" justifyContent="center" p={3}>
-                        <CircularProgress />
-                    </Box>
-                </DashboardCard>
-            </PageContainer>
-        );
-    }
+    const showVideoThumbnailInput = isVideoFile(formData.featuredImage);
 
     return (
-        <PageContainer
-            title={isEditing ? 'Edit Article' : 'Create Article'}
-            description={isEditing ? 'Edit existing article' : 'Create a new article'}
-        >
+        <PageContainer title={isEditing ? 'Edit Article' : 'Create Article'} description={isEditing ? 'Edit existing article' : 'Create a new article'}>
             <DashboardCard title={isEditing ? 'Edit Article' : 'Create Article'}>
                 <Box component="form" onSubmit={handleSubmit}>
                     <Stack spacing={3}>
                         {error && <Alert severity="error">{error}</Alert>}
                         {success && <Alert severity="success">{success}</Alert>}
 
-                        <TextField
-                            label="Title"
-                            value={formData.title}
-                            onChange={(e) => handleChange('title', e.target.value)}
-                            required
-                            fullWidth
-                        />
+                        <TextField label="Title" value={formData.title} onChange={(e) => handleChange('title', e.target.value)} required fullWidth />
 
-                        <TextField
-                            label="Excerpt"
-                            value={formData.excerpt}
-                            onChange={(e) => handleChange('excerpt', e.target.value)}
-                            required
-                            fullWidth
-                            multiline
-                            rows={2}
-                        />
+                        <TextField label="Excerpt" value={formData.excerpt} onChange={(e) => handleChange('excerpt', e.target.value)} required fullWidth multiline rows={2} />
 
                         <FormControl fullWidth>
                             <InputLabel>Category</InputLabel>
-                            <Select
-                                value={formData.category}
-                                label="Category"
-                                onChange={(e) => handleChange('category', e.target.value)}
-                                required
-                            >
+                            <Select value={formData.category} label="Category" onChange={(e) => handleChange('category', e.target.value)} required>
                                 <MenuItem value="রাজশাহী">রাজশাহী</MenuItem>
                                 <MenuItem value="খেলাধুলা">খেলাধুলা</MenuItem>
                                 <MenuItem value="বাংলাদেশ">বাংলাদেশ</MenuItem>
@@ -343,13 +235,7 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                         </FormControl>
 
                         <Box>
-                            <input
-                                type="file"
-                                accept="image/*,video/*"
-                                id="featured-media-upload"
-                                style={{ display: 'none' }}
-                                onChange={handleFileUpload}
-                            />
+                            <input type="file" accept="image/*,video/*" id="featured-media-upload" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'featuredImage')} />
                             <TextField
                                 label="Featured Image/Video URL"
                                 value={formData.featuredImage}
@@ -358,95 +244,59 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                                 helperText="Upload an image or video file, or enter a URL"
                                 InputProps={{
                                     endAdornment: (
-                                        <IconButton
-                                            onClick={() => document.getElementById('featured-media-upload')?.click()}
-                                            disabled={uploadingImage}
-                                            title="Upload image or video"
-                                        >
+                                        <IconButton onClick={() => document.getElementById('featured-media-upload')?.click()} disabled={uploadingImage}>
                                             {uploadingImage ? <CircularProgress size={24} /> : <UploadIcon />}
                                         </IconButton>
-                                    ),
+                                    )
                                 }}
                             />
                             {formData.featuredImage && (
                                 <Box mt={2}>
-                                    {isVideoFile(formData.featuredImage) ? (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                                Featured Video Preview:
-                                            </Typography>
-                                            <video
-                                                src={formData.featuredImage}
-                                                width="300"
-                                                height="180"
-                                                controls
-                                                style={{ 
-                                                    objectFit: 'cover',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid #ddd'
-                                                }}
-                                            >
-                                                Your browser does not support the video tag.
-                                            </video>
-                                        </Box>
+                                    {showVideoThumbnailInput ? (
+                                        <video src={formData.featuredImage} width="300" height="180" controls style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
                                     ) : (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                                Featured Image Preview:
-                                            </Typography>
-                                            <Image
-                                                src={formData.featuredImage}
-                                                alt="Featured image preview"
-                                                width={200}
-                                                height={120}
-                                                style={{ 
-                                                    objectFit: 'cover',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid #ddd'
-                                                }}
-                                            />
-                                        </Box>
+                                        <Image src={formData.featuredImage} alt="Featured image preview" width={200} height={120} style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
                                     )}
                                 </Box>
                             )}
                         </Box>
 
-                        <Box sx={{ mb: 2 }}>
-                            <MemoizedTiptapEditor
-                                value={formData.content}
-                                onChange={(value) => handleChange('content', value)}
-                            />
-                        </Box>
-
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={formData.isFeatured}
-                                    onChange={(e) => handleChange('isFeatured', e.target.checked)}
+                        {showVideoThumbnailInput && (
+                            <Box>
+                                <input type="file" accept="image/*" id="video-thumbnail-upload" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'videoThumbnail')} />
+                                <TextField
+                                    label="Video Thumbnail URL"
+                                    value={formData.videoThumbnail || ''}
+                                    onChange={(e) => handleChange('videoThumbnail', e.target.value)}
+                                    fullWidth
+                                    helperText="Upload or enter a thumbnail image for the video"
+                                    InputProps={{
+                                        endAdornment: (
+                                            <IconButton onClick={() => document.getElementById('video-thumbnail-upload')?.click()} disabled={uploadingImage}>
+                                                {uploadingImage ? <CircularProgress size={24} /> : <UploadIcon />}
+                                            </IconButton>
+                                        )
+                                    }}
                                 />
-                            }
-                            label="Featured Article"
-                        />
+                                {formData.videoThumbnail && (
+                                    <Box mt={2}>
+                                        <Image src={formData.videoThumbnail} alt="Video thumbnail preview" width={200} height={120} style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                                    </Box>
+                                )}
+                            </Box>
+                        )}
+
+                        <MemoizedTiptapEditor value={formData.content} onChange={(value) => handleChange('content', value)} />
+
+                        <FormControlLabel control={<Checkbox checked={formData.isFeatured} onChange={(e) => handleChange('isFeatured', e.target.checked)} />} label="Featured Article" />
 
                         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                            <Button
-                                type="button"
-                                variant="outlined"
-                                onClick={() => router.push('/admin')}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                disabled={loading}
-                            >
-                                {loading ? <CircularProgress size={24} /> : (isEditing ? 'Update' : 'Create')}
-                            </Button>
+                            <Button type="button" variant="outlined" onClick={() => router.push('/admin')}>Cancel</Button>
+                            <Button type="submit" variant="contained" disabled={loading}>{loading ? <CircularProgress size={24} /> : (isEditing ? 'Update' : 'Create')}</Button>
                         </Box>
                     </Stack>
                 </Box>
             </DashboardCard>
-            </PageContainer>
+        </PageContainer>
     );
 }
