@@ -41,7 +41,7 @@ interface ArticleFormData {
     excerpt: string;
     category: string;
     featuredImage: string;
-    videoThumbnail?: string;
+    thumbnailImage?: string;
     isFeatured: boolean;
 }
 
@@ -51,7 +51,7 @@ const initialFormData: ArticleFormData = {
     excerpt: '',
     category: '',
     featuredImage: '',
-    videoThumbnail: '',
+    thumbnailImage: '',
     isFeatured: false
 };
 
@@ -170,7 +170,7 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'featuredImage' | 'videoThumbnail') => {
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'featuredImage' | 'thumbnailImage') => {
         const file = event.target.files?.[0];
         if (!file) return;
 
@@ -263,11 +263,11 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
 
                         {showVideoThumbnailInput && (
                             <Box>
-                                <input type="file" accept="image/*" id="video-thumbnail-upload" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'videoThumbnail')} />
+                                <input type="file" accept="image/*" id="video-thumbnail-upload" style={{ display: 'none' }} onChange={(e) => handleFileUpload(e, 'thumbnailImage')} />
                                 <TextField
                                     label="Video Thumbnail URL"
-                                    value={formData.videoThumbnail || ''}
-                                    onChange={(e) => handleChange('videoThumbnail', e.target.value)}
+                                    value={formData.thumbnailImage || ''}
+                                    onChange={(e) => handleChange('thumbnailImage', e.target.value)}
                                     fullWidth
                                     helperText="Upload or enter a thumbnail image for the video"
                                     InputProps={{
@@ -278,9 +278,9 @@ export default function ArticleForm({ params }: { params: { id: string } }) {
                                         )
                                     }}
                                 />
-                                {formData.videoThumbnail && (
+                                {formData.thumbnailImage && (
                                     <Box mt={2}>
-                                        <Image src={formData.videoThumbnail} alt="Video thumbnail preview" width={200} height={120} style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
+                                        <Image src={formData.thumbnailImage} alt="Video thumbnail preview" width={200} height={120} style={{ objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }} />
                                     </Box>
                                 )}
                             </Box>
