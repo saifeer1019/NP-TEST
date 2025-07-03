@@ -2,10 +2,10 @@ import { Box, IconButton, Input } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import React, { useState } from 'react';
 
-const SearchComp = ({ handleSearch }) => {
+const SearchComp = ({ handleSearch}: any ) => {
     const [searchQuery, setSearchQuery] = useState('');
     
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: any) => {
         e.preventDefault();
         handleSearch(searchQuery);
     };

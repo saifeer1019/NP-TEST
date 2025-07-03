@@ -147,7 +147,7 @@ const AdminPage = () => {
                                 onChange={(e) => handleFilterChange('category', e.target.value)}
                             >
                                 <MenuItem value="">All</MenuItem>
-                                {categories && categories.map((category, id) => {
+                                {categories && categories.map((category: any, id: any) => {
                                     return (
                                         <MenuItem key={id} value={category.name}>{category.name}</MenuItem>
                                     );
