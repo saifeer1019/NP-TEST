@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Typography,
     Table,
@@ -19,12 +19,13 @@ import {
     Stack,
     Checkbox,
     FormControlLabel,
-    Button
+    Button,
 } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/container/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import SearchComp from './components/Search';
 
 interface Article {
     _id: string;
@@ -42,23 +43,26 @@ interface Article {
 const AdminPage = () => {
     const router = useRouter();
     const [articles, setArticles] = useState<Article[]>([]);
+    const [categories, setCategories] = useState<any>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [filters, setFilters] = useState({
         category: '',
+        search: '',
         isFeatured: false,
         startDate: '',
         endDate: ''
     });
 
-    const fetchArticles = async () => {
+    const fetchArticles = useCallback(async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: '10',
                 ...(filters.category && { category: filters.category }),
+                ...(filters.search && { searchQuery: filters.search }),
                 ...(filters.isFeatured && { isFeatured: 'true' }),
                 ...(filters.startDate && { startDate: new Date(filters.startDate).toISOString() }),
                 ...(filters.endDate && { endDate: new Date(filters.endDate).toISOString() })
@@ -72,7 +76,22 @@ const AdminPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, filters]);
+
+    const fetchCategories = useCallback(async () => {
+        try {
+            const response = await axios.get(`/api/categories`);
+            setCategories(response.data.categories);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
+    }, []);
+
+    const handleSearch = useCallback((searchQuery: string) => {
+        setFilters(prev => ({ ...prev, search: searchQuery }));
+        setPage(1);
+    }, []);
+
     const handleSubmit = async (id: string) => {
         try {
             const article = articles.find((article) => article._id === id);
@@ -85,20 +104,26 @@ const AdminPage = () => {
             }
         } catch (error) {
             console.error('Error updating article:', error);
-        } finally {
-            setLoading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        console.log("handling delete");
-        await axios.delete(`/api/articles/${id}`);
-        window.location.reload() };
-    
+        try {
+            await axios.delete(`/api/articles/${id}`);
+            // Instead of reloading, just refetch articles
+            fetchArticles();
+        } catch (error) {
+            console.error('Error deleting article:', error);
+        }
+    };
 
     useEffect(() => {
         fetchArticles();
-    }, [page, filters]);
+    }, [fetchArticles]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
         setPage(value);
@@ -113,8 +138,6 @@ const AdminPage = () => {
         <PageContainer title="Articles Management" description="Manage your articles">
             <DashboardCard title="Articles List">
                 <Box sx={{ mb: 3 }}>
-                
-
                     <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} alignItems="center" mb={2}>
                         <FormControl sx={{ minWidth: 120 }}>
                             <InputLabel>Category</InputLabel>
@@ -124,11 +147,11 @@ const AdminPage = () => {
                                 onChange={(e) => handleFilterChange('category', e.target.value)}
                             >
                                 <MenuItem value="">All</MenuItem>
-                                <MenuItem value="রাজশাহী">রাজশাহী</MenuItem>
-                                <MenuItem value="Business">খেলাধুলা</MenuItem>
-                                <MenuItem value="Lifestyle">বাংলাদেশ</MenuItem>
-                                <MenuItem value="Lifestyle">এডভার্টাইসমেন্ট</MenuItem>
-                         
+                                {categories && categories.map((category, id) => {
+                                    return (
+                                        <MenuItem key={id} value={category.name}>{category.name}</MenuItem>
+                                    );
+                                })}
                             </Select>
                         </FormControl>
 
@@ -157,14 +180,16 @@ const AdminPage = () => {
                             onChange={(e) => handleFilterChange('endDate', e.target.value)}
                             InputLabelProps={{ shrink: true }}
                         />
-                            <Button 
-                        variant="contained"
-                        className="self-end" 
-                        onClick={() => router.push('/admin/article/new')}
-                        sx={{ mb: 2 }}
-                    >
-                        Create New Article
-                    </Button>
+
+                        <SearchComp handleSearch={handleSearch} />
+
+                        <Button 
+                            variant="contained"
+                            onClick={() => router.push('/admin/article/new')}
+                            sx={{ mb: 2 }}
+                        >
+                            Create New Article
+                        </Button>
                     </Stack>
 
                     <TableContainer component={Paper}>
@@ -184,46 +209,54 @@ const AdminPage = () => {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7}>
+                                        <TableCell colSpan={8}>
                                             <Typography align="center">Loading...</Typography>
                                         </TableCell>
                                     </TableRow>
-                                ) : articles.map((article) => (
-                                    <TableRow key={article._id}>
-                                        <TableCell>{article.title}</TableCell>
-                                        <TableCell>{article.author?.name || 'N/A'}</TableCell>
-                                        <TableCell>{article.category}</TableCell>
-                                        <TableCell>
-                                            {new Date(article.publishDate).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Checkbox
-                                                checked={article.isFeatured}
-                                                onChange={() => handleSubmit(article._id)}
-                                            />
-                                        </TableCell>
-                                        <TableCell>{article.views}</TableCell>
-                                        <TableCell >
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                onClick={() => router.push(`/admin/article/${article._id}`)}
-                                            >
-                                                Edit
-                                            </Button>
-                                            </TableCell>
-                                            <TableCell >
-                                            <Button
-                                            color='error'
-                                                variant="outlined"
-                                                size="small"
-                                           onClick={() => handleDelete(article._id)}
-                                            >
-                                                Delete
-                                            </Button>
+                                ) : articles.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={8}>
+                                            <Typography align="center">No articles found</Typography>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : (
+                                    articles.map((article) => (
+                                        <TableRow key={article._id}>
+                                            <TableCell>{article.title}</TableCell>
+                                            <TableCell>{article.author?.name || 'N/A'}</TableCell>
+                                            <TableCell>{article.category}</TableCell>
+                                            <TableCell>
+                                                {new Date(article.publishDate).toLocaleDateString()}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={article.isFeatured}
+                                                    onChange={() => handleSubmit(article._id)}
+                                                />
+                                            </TableCell>
+                                            <TableCell>{article.views}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => router.push(`/admin/article/${article._id}`)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    color='error'
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => handleDelete(article._id)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
@@ -241,5 +274,6 @@ const AdminPage = () => {
         </PageContainer>
     );
 };
+
 
 export default AdminPage;

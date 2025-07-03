@@ -12,15 +12,25 @@ export async function GET(req: NextRequest) {
         const page = parseInt(url.searchParams.get('page') || '1');
         const limit = parseInt(url.searchParams.get('limit') || '10');
         const category = url.searchParams.get('category');
+        
+        const searchQuery = url.searchParams.get('searchQuery');
         const isFeatured = url.searchParams.get('isFeatured');
         const startDate = url.searchParams.get('startDate');
         const endDate = url.searchParams.get('endDate');
         
         // Build query
         const query: any = {};
+          if (searchQuery) {
+         
+             query.$or = [
+            { title: { $regex: searchQuery, $options: "i" } }, // Search in title
+            { content: { $regex: searchQuery, $options: "i" } } // Search in content
+        ];
+        }
         
         if (category) {
             query.category = category;
+           
         }
         
         if (isFeatured === 'true') {

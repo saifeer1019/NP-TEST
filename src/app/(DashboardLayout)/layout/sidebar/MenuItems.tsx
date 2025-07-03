@@ -22,6 +22,12 @@ const Menuitems = [
     icon: IconLayoutDashboard,
     href: "/",
   },
+    {
+    id: uniqueId(),
+    title: "Categories",
+    icon: IconLayoutDashboard,
+    href: "/categories",
+  },
 
   // {
   //   navlabel: true,

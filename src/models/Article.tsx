@@ -31,7 +31,9 @@ const articleSchema = new mongoose.Schema({
         
     },
    
-
+  isVideo: {type: Boolean,
+            default: false
+   },
     featuredImage: String,
     thumbnailImage: {
         type: String,
